@@ -3,8 +3,10 @@ pragma solidity ^0.5.16;
 contract Token {
     string  public name = "Smart Token";
     string  public symbol = "SMTK";
-    uint256 public totalSupply = 1000000000000000000; // 1 million tokens
-    uint8   public decimals = 10;
+    uint256 public totalSupply = 100000000000000000000000000; // 1 million tokens
+    uint8   public decimals = 18;
+    uint256 public circulatingSupply = 50000000000000000000000000;
+    uint256 public resevatedSupply = 0;
 
     event Transfer(
         address indexed _from,
@@ -47,5 +49,23 @@ contract Token {
         allowance[_from][msg.sender] -= _value;
         emit Transfer(_from, _to, _value);
         return true;
+    }
+
+    // TODO: Change function visibility
+    function addcirculatingSupply(uint256 _value) public returns (bool success){
+        if(_value + circulatingSupply <= totalSupply){
+            circulatingSupply+=_value;
+            return _value>0;
+        }
+        return false;
+    }
+
+    // TODO: Change function visibility
+    function removecirculatingSupply(uint256 _value) public returns (bool success){
+        if(circulatingSupply >= _value){
+            circulatingSupply-=_value;
+            return _value>0;
+        }
+        return false;
     }
 }

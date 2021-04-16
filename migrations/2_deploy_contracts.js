@@ -1,6 +1,10 @@
 const Token = artifacts.require("Token");
 const EthSwap = artifacts.require("EthSwap");
 
+function tokens(n){
+    return web3.utils.toWei(n,'ether');
+}
+
 module.exports = async function(deployer) {
 
     // Deploy Token
@@ -8,11 +12,11 @@ module.exports = async function(deployer) {
     const token = await Token.deployed();
 
     // Deploy EthSwap
-    await deployer.deploy(EthSwap);
+    await deployer.deploy(EthSwap, token.address);
     const ethSwap = await EthSwap.deployed();
 
     // Transfer all tokens to EthSwap (100 million)
-    await token.transfer(ethSwap.address, '500000000000000000');
+    await token.transfer(ethSwap.address, tokens('10000000'));
     //await token.transfer(, '5000000000000000000')
 }
 /*
