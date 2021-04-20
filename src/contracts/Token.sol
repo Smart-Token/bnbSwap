@@ -1,18 +1,22 @@
 pragma solidity ^0.5.16;
 
 contract Token {
-    string  public name = "Smart Token";
-    string  public symbol = "SMTK";
-    uint256 public totalSupply = 100000000000000000000000000; // 1 million tokens
-    uint8   public decimals = 18;
-    uint256 public circulatingSupply = 50000000000000000000000000;
-    uint256 public resevatedSupply = 0;
+    string public name;
+    string public symbol;
+    uint256 public totalSupply;
+    uint8 public decimals;
+    uint256 public circulatingSupply;
 
-    event Transfer(
-        address indexed _from,
-        address indexed _to,
-        uint256 _value
-    );
+    constructor() public {
+        name = "Smart Token";
+        symbol = "SMTK";        
+        decimals = 18;
+        totalSupply = 63963963 * 10 ** 18; // 100 million tokens
+        circulatingSupply = (totalSupply * 49) / 100;
+        balanceOf[msg.sender] = totalSupply;
+    }
+
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
 
     event Approval(
         address indexed _owner,
@@ -23,11 +27,10 @@ contract Token {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
-    constructor() public {
-        balanceOf[msg.sender] = totalSupply;
-    }
-
-    function transfer(address _to, uint256 _value) public returns (bool success) {
+    function transfer(address _to, uint256 _value)
+        public
+        returns (bool success)
+    {
         require(balanceOf[msg.sender] >= _value);
         balanceOf[msg.sender] -= _value;
         balanceOf[_to] += _value;
@@ -35,13 +38,20 @@ contract Token {
         return true;
     }
 
-    function approve(address _spender, uint256 _value) public returns (bool success) {
+    function approve(address _spender, uint256 _value)
+        public
+        returns (bool success)
+    {
         allowance[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
         return true;
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _value
+    ) public returns (bool success) {
         require(_value <= balanceOf[_from]);
         require(_value <= allowance[_from][msg.sender]);
         balanceOf[_from] -= _value;
@@ -52,20 +62,38 @@ contract Token {
     }
 
     // TODO: Change function visibility
-    function addcirculatingSupply(uint256 _value) public returns (bool success){
-        if(_value + circulatingSupply <= totalSupply){
-            circulatingSupply+=_value;
-            return _value>0;
+    function addCirculatingSupply(uint256 _value)
+        public
+        returns (bool success)
+    {
+        if (_value + circulatingSupply <= totalSupply) {
+            circulatingSupply += _value;
+            return _value > 0;
         }
         return false;
     }
 
     // TODO: Change function visibility
-    function removecirculatingSupply(uint256 _value) public returns (bool success){
-        if(circulatingSupply >= _value){
-            circulatingSupply-=_value;
-            return _value>0;
+    function removeCirculatingSupply(uint256 _value)
+        public
+        returns (bool success)
+    {
+        if (circulatingSupply >= _value) {
+            circulatingSupply -= _value;
+            return _value > 0;
         }
         return false;
+    }
+
+    function getCirculatingSupply() public view returns (uint256){
+            return circulatingSupply;
+    }
+
+    function getTotalSupply() public view returns (uint256){
+        return totalSupply;
+    }
+
+    function getDecimals() public view returns (uint256){
+        return decimals;
     }
 }

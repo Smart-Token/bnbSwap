@@ -1,44 +1,158 @@
 import React, { Component } from 'react';
-import logo from '../logo.png';
+import Web3 from 'web3';
 import './App.css';
+import Token from '../abis/Token.json';
+import BnbSwap from '../abis/BnbSwap.json';
+import Navbar from './Navbar.js';
+import Main from './Main.js';
 
 class App extends Component {
+
+  async componentWillMount(){
+      await this.loadWeb3();
+      //console.log(window.web3);
+      this.loadBlockchainData();
+    }
+
+  async loadBlockchainData(){
+    
+    const web3 = window.web3;
+    const accounts = await web3.eth.getAccounts();
+    this.setState({ account : accounts[0] });
+    //console.log(this.state.account);
+
+    const bnbBalance = await web3.eth.getBalance(this.state.account);
+    this.setState({ bnbBalance });
+    //console.log(this.state.bnbBalance);
+
+    // Load token
+    const networkId = await web3.eth.net.getId();
+    const tokenData = Token.networks[networkId];
+    if (tokenData){
+      const token = new web3.eth.Contract(Token.abi, tokenData.address);
+      this.setState( {token} );
+      //console.log(token);
+      let tokenBalance = await token.methods.balanceOf(this.state.account).call();
+      //console.log("tokenBalance: "+tokenBalance);
+      this.setState({ tokenBalance: tokenBalance.toString() });
+      const decimals = await token.methods.getDecimals().call();
+      this.setState({decimals});
+      //const cs = await token.methods.getCirculatingSupply().call();
+      //console.log(cs.toString());
+    }
+    else{
+      window.alert("Token contract not deployed to detected network");
+    }
+
+    const bnbSwapData = BnbSwap.networks[networkId];
+    if (bnbSwapData){
+      const bnbSwap = new web3.eth.Contract(BnbSwap.abi, bnbSwapData.address);
+      this.setState( {bnbSwap} );
+      const rate = await bnbSwap.methods.getEstimatedRateBuySell().call();
+      this.setState({rate : rate.toString()})
+    }
+    else{
+      window.alert("BnbSwap contract not deployed to detected network");
+    }
+
+
+
+    //console.log(this.state.bnbSwap);
+    this.setState({ webMode: "buy-sell" });
+
+  }
+
+  // Comprobates if browser has MetaMask or any blockchain support
+  async loadWeb3() {
+    if (window.ethereum) {
+      window.web3 = new Web3(window.ethereum);
+      await window.ethereum.enable();
+    }
+    else if (window.web3) {
+      window.web3 = new Web3(window.web3.currentProvider);
+    }
+    else {
+      window.alert('Non-Ethereum browser detected. You should consider trying MetaMask!');
+    }
+    
+    
+  }
+
+  buyTokens = (etherAmount) => {
+  this.setState({ webMode: "transaction" })
+  this.state.bnbSwap.methods.buyTokens().send({ value: etherAmount, from: this.state.account }).on('transactionHash', (hash) => {})
+  .on("confirmation", function(){window.alert("Transaction sucessful");window.location.reload()})
+  .on("error", function(){window.alert("Transaction error");window.location.reload()})
+  /*let bnbBalance;
+            window.web3.eth.getBalance(this.state.account).then(function(result){this.setState({bnbBalance:result})});
+            //console.log(this.state.bnbBalance);
+            this.setState({bnbBalance});
+            let tokenBalance = async () => {
+            return await this.props.token.methods.balanceOf(this.state.account).call();
+            }
+            this.setState({tokenBalance : tokenBalance.toString()})
+            */  
+
+  
+}
+
+    sellTokens = (tokenAmount) => {
+      this.setState({ webMode: "transaction" })
+      this.state.token.methods.approve(this.state.bnbSwap.address, tokenAmount).send({ from: this.state.account }).on('transactionHash', (hash) => {
+      this.state.bnbSwap.methods.sellTokens(tokenAmount).send({ from: this.state.account }).on('transactionHash', (hash) => {})})
+      .on("confirmation", function(){window.alert("Transaction sucessful");window.location.reload()})
+      .on("error", function(){window.alert("Transaction error");window.location.reload()})
+}
+
+  constructor(props){
+    super(props);
+    this.state = {
+      account: '',
+      token: {},
+      decimals: '18',
+      bnbSwap: {},
+      bnbBalance: '0',
+      tokenBalance: '0',
+      rate: '1',
+      webMode: "loading"
+    };
+  }
+
   render() {
+    let content;
+    switch (this.state.webMode){
+      case "loading":
+         content = <p id="loader" className="text-center">Loading...</p>
+         break;
+      case "transaction":
+          content = <p id="loader" className="text-center">Waiting until the transaction is confirmated...</p>
+         break;
+      default:
+      content = <Main
+      bnbBalance={this.state.bnbBalance}
+      tokenBalance={this.state.tokenBalance}
+      buyTokens={this.buyTokens}
+      sellTokens={this.sellTokens}
+      rate={this.state.rate}
+      decimals = {this.state.decimals}
+      bnbSwap={this.state.bnbSwap}
+      account={this.state.account}
+      />
+    }
     return (
       <div>
-        <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-          <a
-            className="navbar-brand col-sm-3 col-md-2 mr-0"
-            href="http://www.dappuniversity.com/bootcamp"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Dapp University
-          </a>
-        </nav>
+        <Navbar account={this.state.account} />
         <div className="container-fluid mt-5">
           <div className="row">
-            <main role="main" className="col-lg-12 d-flex text-center">
+            <main role="main" className="col-lg-12 ml-auto mr-auto" style={{maxWidth: '600px'}}>
               <div className="content mr-auto ml-auto">
                 <a
                   href="http://www.dappuniversity.com/bootcamp"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <img src={logo} className="App-logo" alt="logo" />
                 </a>
-                <h1>Dapp University Starter Kit</h1>
-                <p>
-                  Edit <code>src/components/App.js</code> and save to reload.
-                </p>
-                <a
-                  className="App-link"
-                  href="http://www.dappuniversity.com/bootcamp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  LEARN BLOCKCHAIN <u><b>NOW! </b></u>
-                </a>
+                {content}
               </div>
             </main>
           </div>
