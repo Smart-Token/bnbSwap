@@ -17,12 +17,28 @@ class BuyForm extends Component {
   }
 
   render() {
-      let validAmount = Number(this.state.input)<Number(this.props.bnbBalance)
-      
+      let validInput = Number(this.state.input)<=Number(this.props.bnbBalance);
+      let validOutput =  Number(this.state.output)<=Number(this.props.tokenExchangeBalance);
+      //console.log(this.props.tokenExchangeBalance)
       let content;
-      if (!validAmount){
-          content = <div className="mb-3"  style={{ color: 'red' }} >MAX: {window.web3.utils.fromWei(this.props.bnbBalance)}</div>
+      if (!validInput && !validOutput){
+          content = <div className="mb-3"  style={{ color: 'red' }} >MAX: {
+            Math.min(
+            window.web3.utils.fromWei(this.props.bnbBalance.toString()),
+             window.web3.utils.fromWei(this.props.tokenExchangeBalance)
+             )}</div>
       }
+      else if(!validInput){
+        content = <div className="mb-3"  style={{ color: 'red' }} >MAX: {
+          window.web3.utils.fromWei(this.props.bnbBalance)
+        }</div>
+      }
+      else if(!validOutput){
+        content = <div className="mb-3"  style={{ color: 'red' }} >MAX: {
+          window.web3.utils.fromWei(this.props.tokenExchangeBalance)
+        }</div>
+      }
+      
      return (
         <form className="mb-3" onSubmit={(event) => {
             event.preventDefault()
@@ -112,7 +128,7 @@ class BuyForm extends Component {
             <span className="float-right text-muted">1 BNB ≃ {this.state.rate} SMTK</span>
           </div>
           
-          <button disabled={!validAmount} type="submit" className="btn btn-primary btn-block btn-lg">SWAP!</button>
+          <button disabled={!validInput || !validOutput} type="submit" className="btn btn-primary btn-block btn-lg">SWAP!</button>
         </form>
 
     );

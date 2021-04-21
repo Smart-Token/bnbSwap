@@ -3,6 +3,7 @@ require('babel-polyfill');
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 const fs = require('fs');
 const privateKeys = fs.readFileSync(".secret").toString().trim().split("\n");
+const BSCSCANAPIKEY = fs.readFileSync(".bscscanapikey").toString().trim()
 //console.log(privateKeys);
 module.exports = {
   networks: {
@@ -18,7 +19,8 @@ module.exports = {
       confirmations: 10,
       timeoutBlocks: 200,
       skipDryRun: true,
-      networkCheckTimeout: 10000
+      networkCheckTimeout: 10000,
+      gasPrice: 10000000000
     },
     bsc: {
       provider: () => new HDWalletProvider(prrivateKeys, `https://bsc-dataseed1.binance.org`),
@@ -32,11 +34,18 @@ module.exports = {
   contracts_build_directory: './src/abis/',
   compilers: {
     solc: {
+      version: "^0.8.3",
       optimizer: {
         enabled: true,
         runs: 200
       },
       evmVersion: "petersburg"
     }
+  },
+  plugins: [
+    'truffle-plugin-verify'
+  ],
+  api_keys: {
+    etherscan: BSCSCANAPIKEY
   }
 }

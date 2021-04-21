@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import Web3 from 'web3';
 import './App.css';
-import Token from '../abis/Token.json';
+import Token from '../abis/SMTKToken.json';
 import BnbSwap from '../abis/BnbSwap.json';
 import Navbar from './Navbar.js';
 import Main from './Main.js';
+
 
 class App extends Component {
 
@@ -14,11 +15,27 @@ class App extends Component {
       this.loadBlockchainData();
     }
 
+  handleAccountsChanged = (accounts) =>{
+    if (accounts.length === 0){
+      window.alert("Please connect to MetaMask.")
+    }
+    else{
+      this.setState({ account : accounts[0] });
+      
+      if (this.state.account !== localStorage.getItem('address')){
+        localStorage.setItem("address", this.state.account);
+        window.location.reload();
+      }
+       
+    }
+  }
+
   async loadBlockchainData(){
-    
     const web3 = window.web3;
     const accounts = await web3.eth.getAccounts();
-    this.setState({ account : accounts[0] });
+    this.handleAccountsChanged(accounts);
+    
+
     //console.log(this.state.account);
 
     const bnbBalance = await web3.eth.getBalance(this.state.account);
@@ -35,7 +52,7 @@ class App extends Component {
       let tokenBalance = await token.methods.balanceOf(this.state.account).call();
       //console.log("tokenBalance: "+tokenBalance);
       this.setState({ tokenBalance: tokenBalance.toString() });
-      const decimals = await token.methods.getDecimals().call();
+      const decimals = await token.methods.decimals().call();
       this.setState({decimals});
       //const cs = await token.methods.getCirculatingSupply().call();
       //console.log(cs.toString());
@@ -47,9 +64,14 @@ class App extends Component {
     const bnbSwapData = BnbSwap.networks[networkId];
     if (bnbSwapData){
       const bnbSwap = new web3.eth.Contract(BnbSwap.abi, bnbSwapData.address);
-      this.setState( {bnbSwap} );
       const rate = await bnbSwap.methods.getEstimatedRateBuySell().call();
-      this.setState({rate : rate.toString()})
+      const bnbExchangeBalance = await web3.eth.getBalance(bnbSwapData.address);
+      let tokenExchangeBalance = await this.state.token.methods.balanceOf(bnbSwapData.address).call();
+      this.setState({
+        bnbSwap,
+        rate : rate.toString(),
+        bnbExchangeBalance,
+        tokenExchangeBalance})
     }
     else{
       window.alert("BnbSwap contract not deployed to detected network");
@@ -64,9 +86,8 @@ class App extends Component {
 
   // Comprobates if browser has MetaMask or any blockchain support
   async loadWeb3() {
-    if (window.ethereum) {
+    if (window.ethereum || window.web3) {
       window.web3 = new Web3(window.ethereum);
-      await window.ethereum.enable();
     }
     else if (window.web3) {
       window.web3 = new Web3(window.web3.currentProvider);
@@ -80,7 +101,7 @@ class App extends Component {
 
   buyTokens = (etherAmount) => {
   this.setState({ webMode: "transaction" })
-  this.state.bnbSwap.methods.buyTokens().send({ value: etherAmount, from: this.state.account }).on('transactionHash', (hash) => {})
+  this.state.bnbSwap.methods.buyTokens().send({ value: etherAmount, from: this.state.account, gas: '213213' }).on('transactionHash', (hash) => {})
   .on("confirmation", function(){window.alert("Transaction sucessful");window.location.reload()})
   .on("error", function(){window.alert("Transaction error");window.location.reload()})
   /*let bnbBalance;
@@ -98,11 +119,15 @@ class App extends Component {
 
     sellTokens = (tokenAmount) => {
       this.setState({ webMode: "transaction" })
-      this.state.token.methods.approve(this.state.bnbSwap.address, tokenAmount).send({ from: this.state.account }).on('transactionHash', (hash) => {
-      this.state.bnbSwap.methods.sellTokens(tokenAmount).send({ from: this.state.account }).on('transactionHash', (hash) => {})})
+      this.state.token.methods.approve(this.state.bnbSwap.address, tokenAmount).send({ from: this.state.account}).on('transactionHash', (hash) => {
+      this.state.bnbSwap.methods.sellTokens(tokenAmount).send({ from: this.state.account, gas: '213213'}).on('transactionHash', (hash) => {})
       .on("confirmation", function(){window.alert("Transaction sucessful");window.location.reload()})
       .on("error", function(){window.alert("Transaction error");window.location.reload()})
+      })
+      
 }
+
+
 
   constructor(props){
     super(props);
@@ -114,11 +139,14 @@ class App extends Component {
       bnbBalance: '0',
       tokenBalance: '0',
       rate: '1',
+      bnbExchangeBalance: '0',
+      tokenExchangeBalance: '0',
       webMode: "loading"
     };
   }
 
   render() {
+    window.ethereum.on('accountsChanged', accounts => {this.handleAccountsChanged(accounts);console.log(accounts);});
     let content;
     switch (this.state.webMode){
       case "loading":
@@ -137,6 +165,8 @@ class App extends Component {
       decimals = {this.state.decimals}
       bnbSwap={this.state.bnbSwap}
       account={this.state.account}
+      bnbExchangeBalance={this.state.bnbExchangeBalance}
+      tokenExchangeBalance={this.state.tokenExchangeBalance}
       />
     }
     return (

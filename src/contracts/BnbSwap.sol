@@ -1,10 +1,11 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.3;
 
-import "./Token.sol";
+import "./SMTKToken.sol";
 
  contract BnbSwap {
     string public name = "BnbSwap Instant Exchange";
-    Token public token;
+    SMTKToken public token;
     uint256 public upRate;
     uint256 public rate;
     uint256 public minTokenTrade;
@@ -25,7 +26,7 @@ import "./Token.sol";
         uint256 rate
     );
 
-    constructor(Token _token) public{
+    constructor(SMTKToken _token){
         token = _token;
         upRate = 9192;
         minTokenTrade = token.totalSupply()/upRate;
@@ -38,7 +39,7 @@ import "./Token.sol";
         require(buyInfo[0] <= token.balanceOf(address(this)), "Invalid amount of tokens purchased are greater than exhange funds");
 
         token.transfer(msg.sender, buyInfo[0]);
-        token.addCirculatingSupply(buyInfo[0]);
+        SMTKToken(token).addCirculatingSupply(buyInfo[0]);
         emit TokenPurchase(msg.sender, address(token), buyInfo[0], buyInfo[1]);
     }
 
@@ -53,7 +54,7 @@ import "./Token.sol";
 
         token.transferFrom(msg.sender, address(this), _amountSMTK);
         token.removeCirculatingSupply(_amountSMTK);
-        msg.sender.transfer(sellInfo[0]);
+        payable(msg.sender).transfer(sellInfo[0]);
         emit TokenSold(msg.sender, address(token), _amountSMTK, sellInfo[1]);
         
     }

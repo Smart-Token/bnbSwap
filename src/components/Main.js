@@ -22,6 +22,7 @@ class Main extends Component {
       decimals = {this.props.decimals}
       bnbSwap={this.props.bnbSwap}
       account={this.props.account}
+      tokenExchangeBalance={this.props.tokenExchangeBalance}
       />
       }
       else{
@@ -33,6 +34,7 @@ class Main extends Component {
         decimals = {this.props.decimals}
         bnbSwap={this.props.bnbSwap}
         account={this.props.account}
+        bnbExchangeBalance={this.props.bnbExchangeBalance}
         />
       }
       

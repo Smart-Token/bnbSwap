@@ -25,3 +25,6 @@ yarn-error.log*
 
 # Wallets PK
 .secret
+
+# BSC Scan API Key file
+.bscscanapikey

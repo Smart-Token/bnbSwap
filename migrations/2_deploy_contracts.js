@@ -1,4 +1,4 @@
-const Token = artifacts.require("Token");
+const Token = artifacts.require("SMTKToken");
 const BnbSwap = artifacts.require("BnbSwap");
 
 function tokens(n){
